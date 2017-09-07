@@ -114,6 +114,12 @@ barchart(ptabsex,horizontal=FALSE,
 ```
 
 >**Practice:**  Investigate graphically the Research Question:  "What percentage of students prefer to sit in the front of a classroom?"  Make a barchart of percentages.
+```{r}
+ptabseat <- with(m111survey,perctable(seat))
+barchart(ptabseat,horizontal=FALSE,
+         main="Distribution of Seat\n(Percentages)",
+         ylab="Percent")
+```
 
 ###  Research Question:  Who is more likely to sit in the front:  a guy or a gal?
 
