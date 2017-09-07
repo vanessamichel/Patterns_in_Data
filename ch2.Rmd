@@ -1,0 +1,1140 @@
+
+
+# Describing Patterns in Data
+
+
+Always remember to load the necessary packages:
+
+```{r message=FALSE}
+require(tigerstats)  #To use all of our functions and the course data
+require(knitr)  #in case you want to knit an RMardown document into HTML
+```
+
+## Data Basics
+
+
+To start, let's work with the **m111survey** data.  It is always present when you load tigerstats:
+```{r}
+head(m111survey)  #This gives the first few rows
+```
+
+In order to get a better view, put **m111survey** into your Workspace:
+```{r}
+data(m111survey)
+```
+
+Then you can get a good look at it:
+```{r}
+View(m111survey)  #Or just click on m111survey in the Workspace
+```
+
+Read the data *in context.*  Look at the Help pages for documentation, or type
+
+```{r eval=FALSE}
+help(m111survey)
+```
+
+
+This is *sample data*:  we took a sample from the population of all GC students.  It comes in the form of a *data frame*.  Each row corresponds to an *individual*  (sometimes called an *observation*).  Each column corresponds to a *variable*.  A variable is something that you measure on an individual.   The *value* of the variable can change from one individual to another.
+
+## **Types of variables**
+
+* *Categorical* (factor). Values are not numbers.  Example:  **sex**(values are "female" and "male").  Some categorical variables come in a natural order, and so are called *ordinal* variables.  Example:  **seat**.
+* *Numerical* (quantitative).  Values are numbers.  There are two sub-types:
+  * *Integer* (often called *discrete*).  Values are whole numbers.  Example:  how many brothers you have.  Possibles values are 0,1,2 ....
+  * *Continuous*.  Values lie in a range of real numbers.  Example:  **height**.
+  
+
+>**Practice:**  Classify each variable in **m111survey**.
+
+You can get R to do the work for you, with the **str** (structure) function:
+
+```{r}
+str(m111survey)
+```
+
+**Structure guides interpretation!**  We will see this in the next section:  the type of a variable determines the methods used to explore it and to describe it to others.
+
+## Exploratory and Descriptive Statistics
+
+
+**Reading Data for Interpreation:**  When you look at sample data, you may wish to examine it to see what patterns it has (*exploratory statistics*), and you may wish to summarize the data and describe these patterns to others (*descriptive statistics*). The tools for both of these jobs are the same, but what the tools you use depend on the kind of *Research Question* you have about the data.
+
+###  Research Question:  What percentage of the sample are females?
+
+This Research Question is about **one categorical variable**, namely the variable **sex**.  We can explore it in two ways, *graphically* and *numerically*.
+
+#### Numerical Exploration:  Tables
+
+We can make a tally of males and females:
+```{r}
+xtabs(~sex,data=m111survey)  #This is "formula-data input"
+```
+
+This gives us counts, but we would like to see percents, so we try:
+
+```{r}
+perctable(m111survey$sex)  #the $ tells R to look inside m111survey to find sex
+```
+
+Another way:
+```{r}
+with(m111survey,perctable(sex))  #Sadly, perctable does not allow formula input
+```
+
+>**Practice**:  Investigate numerically the Research Question:  "What percentage of students prefer to sit in the front of a classroom?"  Use **xtabs** and **perctable**.
+
+#### Graphical Exploration:  Barcharts.
+
+First, store the table in a well-named place:
+```{r fig.width=3,fig.height=3}
+tablesex <- xtabs(~sex,data=m111survey)
+```
+
+Then send the table to the **barchart** function:
+```{r bar,fig.width=3,fig.height=3,fig.cap="Barchart created from a table."}
+barchart(tablesex,horizontal=FALSE,
+         main="Distribution of Sex")
+```
+
+(**Note:**  You could do it in one command,
+```{r eval=FALSE}
+barchart(xtabs(~sex,data=m111survey),horizontal=FALSE,
+         main="Distribution of Sex (Counts)")
+```
+
+but then you would not have preserved the table for use elsewhere.)
+
+To get a barchart with percents:
+```{r fig.width=3,fig.height=3}
+ptabsex <- with(m111survey,perctable(sex))
+barchart(ptabsex,horizontal=FALSE,
+         main="Distribution of Sex\n(Percentages)",
+         ylab="Percent")
+```
+
+>**Practice:**  Investigate graphically the Research Question:  "What percentage of students prefer to sit in the front of a classroom?"  Make a barchart of percentages.
+
+###  Research Question:  Who is more likely to sit in the front:  a guy or a gal?
+
+This Research Question is about the relationship between **two categorical variables**, namely **sex** and **seat**.  We wonder whether knowing a person's sex might help us predict where the person prefers to sit, so we think of **sex** as the *explanatory* variable and **seat** as the *response* variable.
+
+(**Important Idea**: When we are studying the relationship between two variables X and Y, and we think that X might help to cause or explain Y, or if we simply wish to use X to help predict Y, then we call X the *explanatory* variable and Y the *response* variable.)
+
+#### Numerical Exploration:  Two-Way Tables
+
+These are also called *cross-tables* or *contingency tables*.  Here's how you make a two-way table:
+```{r}
+tabsexseat <- xtabs(~sex+seat,data=m111survey)
+tabsexseat
+```
+In the formula above, the variable you put first goes along the rows of the table.  We like to put the explanatory variable first.
+
+What about percents?  When the explanatory variable is along the rows, it is a good idea to make *row percentages*:
+
+```{r}
+sexseatrp <- rowPerc(tabsexseat)
+sexseatrp
+```
+
+We see that 47.5% of the women prefer the front, whereas only 25.81% of the men prefer the front.
+
+#### Graphical Exploration:  Barcharts Again
+
+```{r fig.width=3,fig.height=3}
+barchart(tabsexseat,stack=FALSE,horizontal=FALSE,
+         main="Seat vs. Sex",
+         auto.key=TRUE)  #auto.key=TRUE gives you the legend
+```
+
+
+
+
+>**Practice:**  Research Question:  "Who is more likely to believe in love at first sight:  a guy or a gal?"  Explore this question both graphically and numerically.
+
+
+
+### Research Question:  How fast do GC students drive, when they drive their fastest?
+
+This Research Question deals with **one numerical variable.**  As usual, it can be explored both graphically and numerically.  There is a lot to say about numerical variables, and many tools have been developed to study them.
+
+
+We will learn about five graphical tools:
+
+* DotPlot
+* Histogram
+* Density Plot
+* Stemplot
+* Boxplot
+
+We will also learn about several numerical measurements:
+
+* the median and other percentiles
+* the five-Number Summary
+* the mean
+* the standard deviation
+* the Interquartile Range
+
+Graphical and numerical tools are mixed together in the discussion that follows.
+
+#### Three Graphical Tools:  Dotplot, Histogram, Density Plot.
+
+##### **Dotplots**
+
+```{r fig.width=3, fig.height=3}
+dotPlot(~fastest,data=m111survey,
+        main="Fastest Speed Ever Driven")
+```
+When the sample is small, each dot represents an individual.
+
+Things to mention when describing the distribution of a numerical variable:
+
+* *Center*:  What seems to be a typical fastest speed?
+* *Shape*.
+  * Symmetric (same on both sides of a central vertical line), or
+  * Left-Skewed (tail going to the left), or
+  * Right-Skewed (tail going to the right).
+  * Unimodal (one hump), or
+  * Bimodal(two humps)
+* *Spread*:  How "spread out" is the data?
+
+For this distribution, we might say that the center is around 115 mph, and that the distribution is unimodal with some right-skewness.  As for spread, for now let's just state the smallest and largest speeds:
+
+```{r}
+min(m111survey$fastest)
+max(m111survey$fastest)
+```
+
+Later on we'll find better ways to describe the spread.
+
+##### **Stemplots**
+
+Stemplots work like dotplots, but give you a better idea of what the original data values were:
+```{r}
+with(m111survey,stem(fastest))  #output goes to the console
+```
+
+Using the stemplot you can recover the original speeds, to the nearest whole number.
+
+>**Practice**: Answer using the stemplot:
+>
+>1. How many people drove between 60 and 70 miles per hour (include 60)?  What were their speeds?
+>2. How many people drove between 120 and 140 mph (include 120)?
+>3. How many drove between between 120 and 130 mph (include 120)?
+
+##### **Histograms**
+
+```{r fig.width=3,fig.height=3}
+histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph")
+```
+
+The numbers that give the left and right-hand boundaries of the bases of the rectangles are called *breaks.*  You should fiddle with the number of rectangles to get a histogram that describes the data well:
+
+```{r  eval=FALSE}
+require(manipulate)
+manipulate(
+  n=slider(1,30,init=5,label="Number of Rectangles"),
+  histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph",
+          nint=n)  #nint specifies how many rectangles to make
+  )
+```
+
+Say that you decide you like 14 rectangles best.  Then you can set your histogram:
+```{r fig.width=3,fig.height=3}
+histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph",
+          nint=14
+  )
+```
+
+You can also specify exactly where the breakpoints are to occur.  For example, say you want them to go the rectangles to go from 60 to 190, with each rectangle being 10 mph wide.  Then make a sequence of breaks:
+
+```{r}
+MyBreaks <- seq(60,190,by=10)
+MyBreaks
+```
+
+Now that we have the sequence, we feed it to a "breaks" argument in the **histogram** function:
+```{r fig.width=3,fig.height=3}
+histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph",
+          breaks=MyBreaks
+  )
+```
+
+>**Practice:**  Look at the last histogram to answer these questions:
+>
+>1. About what percentage of students in the sample drove between 90 and 100 mph (include 90)?
+>2. About what percentage drove between 100 and 110 mph?
+>3. About what percentage drove between 100 and 120 mph?
+
+So far, the vertical axis in histograms gives percentages.  If we want frequencies, we say:
+```{r fig.width=3,fig.height=3}
+histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph",
+          breaks=MyBreaks,
+          type="count"
+  )
+```
+
+There is another type of histogram that is very important: it's called "density."
+
+```{r fig.width=3,fig.height=3}
+histogram(~fastest,data=m111survey,
+          main="Fastest Speed Ever Driven",
+          xlab="Fastest Speed, in mph",
+          breaks=MyBreaks,
+          type="density"
+  )
+```
+
+In a density histogram:
+
+* the *area* of a rectangle gives you the proportion of data values that lie within the left and right-hand endpoints of the rectangle;
+* the total area of all of the rectangles equals 1.
+
+For example, in the rectangle from 100 to 110 mph, the width is 10 and the height is about 0.02, so the area is
+
+$$10 * 0.02=0.20,$$
+
+which says that .20 (20%) of the students drove between 100 and 110 mph.
+
+>**Practice**:  About what proportion of students drove between 120 and 130 mph?
+
+
+
+##### **Density Plots**
+
+From time to time we will work with an imaginary population:
+```{r}
+data(imagpop)
+```
+
+There are 10,000 people in this population.
+
+Let's vary the number of breaks in a histogram of the incomes of the population:
+```{r  eval=FALSE}
+require(manipulate)
+manipulate(
+  n=slider(1,100,init=5,label="Number of Rectangles"),
+  histogram(~income,data=imagpop,
+          main="Distribution of Annual Income",
+          xlab="Income",
+            type="density",
+          nint=n  #nint specifies how many rectangles to make
+    )
+  )
+```
+When the number of rectangles is large, don't you just *see*, in your mind, a smooth curve that the tops of the rectangles seem to follow?  R can draw that curve for you:
+
+```{r}
+densityplot(~income,data=imagpop,
+            main="Distribution of Income\n(Density Plot)",
+            plot.points=FALSE)
+```
+
+Areas under a density curve give you proportions, so the total are under a density curve is 1.
+
+When you are dealing with sample data, the density plot gives you an estimate, based on your sample, of what the density curve of the population might look like:
+
+```{r}
+densityplot(~fastest,data=m111survey,
+            main="Fastest Speed Ever Driven",
+            plot.points=FALSE)  #leaving plot.points=TRUE will give a "rug"" of data values under the density plot
+```
+
+Often it is a good idea to show the density plot along with your histogram:
+```{r}
+histogram(~fastest,data=m111survey,
+          main="Distribution of Fastest",
+          nint=14,
+          type="density",
+          xlab="Fastest Speed, in mph",
+          panel=function(x,...) {  #the panel argument lets you put more than one graph in your plotting window
+            panel.histogram(x,...)
+            panel.densityplot(x,plot.points=FALSE,...)
+          }
+          )
+```
+
+In the **imagpop** data frame, the variable **kkardashtemp** indicates how each individual feels about the celebrity Kim Kardashian, on a scale of 0 to 100 (0 = utterly cold towards Kim, 100 = very warm feelings for her).
+
+```{r fig.width=3,fig.height=3}
+histogram(~kkardashtemp,data=imagpop,
+          main="Feelings About Kim Kardashian",
+          type="density",
+          breaks=seq(0,100,by=5),
+          xlab="Temperature Rating",
+          panel=function(x,...) {  #the panel argument lets you put more than one graph in your plotting window
+            panel.histogram(x,...)
+            panel.densityplot(x,plot.points=FALSE,...)
+          }
+          )
+```
+It seems that people either love her or hate her!
+
+>**Practice**  Histograms and density plots:
+>
+>1.  With the **m111survey** data, make a histogram of the density heights of the students.  Include a density plot.  Make a good choice about the breaks.
+>2.  Describe the shape of the distribution.  Is it symmetric or skewed? Unimodal, bimodal or neither?
+
+
+
+#### Some Numerical Measures of Center and Spread:  the Median and Other Percentiles
+
+Say you have some data, sorted in order from lowest to highest:
+```{r}
+FakeData <- c(2,4,7,9,10)
+```
+
+The *median* of the data is the number that is right in the middle:
+```{r}
+median(FakeData)
+```
+If there are an even number of data points, then the median is the average of the two points closest to the middle:
+```{r}
+FakeData2 <- c(FakeData,15)
+FakeData2
+median(FakeData2)
+```
+
+About 50% of the data values will lie below the the median of the data, so the median is also called the *50th percentile*.  It is a good numerical measure of the center of a distribution.
+
+```{r fig.width=4,fig.height=4}
+MedFast <- with(m111survey,median(fastest))
+MedFast
+histogram(~fastest,data=m111survey,nint=14,type="density",
+          main="Fastest speed Ever Driven",
+          panel=function(x,...){
+            panel.histogram(x,...)
+            panel.abline(v=MedFast)
+          }
+        )
+```
+In the histogram above, a vertical line has been added at `r MedFast`, the median of the speeds.  Notice that about half of the total area falls below the median, and about half falls above.
+
+You can get other percentiles of a variable with the **quantile** function.  For the 20th, 50th, 80th and 90th percentiles, try
+
+```{r}
+with(m111survey,
+     quantile(fastest,probs=c(0.2,0.5,0.8,0.9))
+     )
+```
+>**Practice**  Looking at the percentiles above:  about what percentage of the students drove less than 120 mph?
+
+Two important percentiles are:
+
+* the 25th percentile (also called the *first quartile*)
+* the 75th percentile  (also called the *third quartile*)
+
+The difference between them is called the *interquartile range*, or IQR for short:
+```{r}
+Q13Speed <- with(m111survey,
+                 quantile(fastest,c(0.25,0.75))
+                 )
+Q13Speed
+```
+
+So the IQR of the speeds is
+
+$$`r Q13Speed[2]` - `r Q13Speed[1]` = `r Q13Speed[2]-Q13Speed[1]`.$$
+
+The IQR tells you the range of the middle 50% of the data, so it is a good measure of spread:  the bigger the IQR, the more spread out your data are.
+
+The *five-number summary* gives you a good quick impression of the distribution of a variable:
+```{r}
+with(m111survey,
+     fivenum(fastest)
+     )
+```
+The five numbers are:
+
+* the minimum
+* the first quartile Q1
+* the median
+* the third quartile Q3
+* the maximum
+
+The five-number summary is the basis for a very useful graphical tool known as the *boxplot*:
+
+```{r fig.width=4,fig.height=4}
+bwplot(~height,data=m111survey,
+       main="Height at GC")
+```
+The dot is at the median.  The box starts at Q1 and goes to Q3.  The upper hinge (or *whisker*) goes to the maximum.  The lower hinge would go to to the minimum height, but there are two heights so small that R decided that you might consider them to be outliers.  An *outlier* in a dataset is a value that lies far above or far below most of the other values.  When R detects possible outliers, they are plotted as individual points.
+
+How does R decide what points to flag as possible outliers?  It uses the *1.5*IQR* rule:
+
+* Find the IQR.
+* Subtract 1.5*IQR from Q1.  If there is any point less than this value, it will be plotted as an outlier, and the lower hinge will end at this value.
+* Add 1.5*IQR to Q3.  If there is any point more than this value, it will be plotted as an outlier, and the upper hinge will end at this value.
+
+>**Practice:**  Make a boxplot of the fastest speeds ever driven by the students.
+>
+>1.  Looking at the boxplot, approximately what is Q1?  Q3?  The IQR?
+>2.  If George's fastest speed is 140 mph, would he be considered an outlier for this dataset?  What if he drove 170 mph?
+
+**Violin Plots**:  A violin plot is a super-cool combination of a boxplot and a density plot:
+
+```{r fig.width=4,fig.height=4}
+bwplot(~height, data=m111survey,
+                main = "Violin Plot of the Heights of Students", 
+                panel = function(...) {
+                  panel.violin(..., col = "bisque")
+                  panel.bwplot(...)
+                }
+       )
+```
+
+To make the "violin" part, R made a density plot of the heights, then made a copy and flipped it over, and then pasted the two pieces together.
+
+
+#### More Numerical Measures of Center and Spread:  the Mean and the Standard Deviation
+
+##### **The Mean**
+
+The mean of a list of numbers is the sum of the numbers, divided by how many there are.  When the list of numbers is a sample from a population, then the mean is called the *sample mean* and is written $\bar{x}$.  The mean of a population is called the  the *population mean*and it is often written as $\mu$.
+
+Sometimes you see the formula for the sample mean written like this:
+
+$$\bar{x}=\frac{\sum{x_i}}{n},$$
+
+where:
+
+* $\sum$ means summing
+* $x_i$ denotes the individual values to be summed
+* $n$ denotes the number of values in the list.
+
+In R, you can make this happen:
+```{r}
+FakeData <- c(1,3,7,8,8,10)
+n <- length(FakeData)
+n
+x.bar <- sum(FakeData)/n  #Do you see the formula for the mean here?
+x.bar
+```
+But R also has a built-in function to compute means:
+```{r}
+mean(FakeData)
+```
+**Warning:**  Watch out for missing values:
+
+Let's compute the mean GPA for the students:
+```{r}
+with(m111survey,
+     mean(GPA)
+     )
+```
+We got NA  ("not assigned").  What happened?  Well, look at the GPAs themselves
+
+```{r}
+m111survey$GPA
+```
+One student did not report a GPA:  see the NA?  When R tried to sum the numbers, it got saw the NA so it had to report NA for the sum, and hence NA for the sample mean.
+
+In order to avoid this problem, it is best to removed the NA values prior to computing the mean.  This is accomplished with the *na.rm* argument:
+```{r}
+with(m111survey,
+     mean(GPA,na.rm=TRUE)
+     )
+```
+
+Now all is well.
+
+(End of Warning.)
+
+The mean is a rival to the median as a measure of center:
+```{r}
+median(m111survey$fastest)
+mean(m111survey$fastest,na.rm=TRUE)
+```
+
+##### **The Standard Deviation**
+
+The standard deviation (or SD for short, or even just $s$) competes with the IQR as a measure of spread, but rather than saying how spread out the middle half of the data is, the SD tries to say how much a typical data value differs from the mean of the data.
+
+Here is the mathematical formula for the SD of a sample:
+
+
+$$s = \sqrt{(\sum{(x_i - \bar{x})^2})/(n-1)}.$$
+
+This is a symbolic way of saying:
+
+* Find the mean of the numbers.
+* Subtract the mean from each number (the results are called the *deviations*).
+* Add up the deviations.
+* Average them, almost, by dividing by how many there are MINUS ONE. (what's up with *that*??  Consult the GeekNotes to find out!)
+* Take the square root of this "almost-average."
+
+Here's how it can be worked out, step by step, in R:
+```{r}
+FakeData <- c(1,3,7,8,8,10)
+x.bar <- mean(FakeData)
+x.bar
+deviations <- FakeData-x.bar
+deviations
+squared.deviations <- deviations^2
+squared.deviations
+n <- length(FakeData)
+variance <- sum(squared.deviations)/(n-1)
+variance
+stand.dev <- sqrt(variance)
+stand.dev
+```
+
+Of course, R has a built-in formula for the SD:
+```{r}
+sd(FakeData)
+sd(m111survey$GPA,na.rm=TRUE)  #smart to set na.rm=TRUE, unless you know there are no missing values
+```
+Most of the time, a majority of the numbers in a dataset lie within one standard of the mean:
+```{r}
+lower <- mean(FakeData)-sd(FakeData)
+upper <- mean(FakeData)+sd(FakeData)
+FakeData>lower & FakeData < upper  #this is a logical test on each element of FakeData
+```
+**Note:**  If you don't take the square root at the end, then you have the *variance* rather than the standard deviation.  The variance can also be computed in R:
+```{r}
+var(FakeData)
+sd(FakeData)^2  #See, it's the same thing!
+```
+The bigger the SD, the more spread out the data are.  The following manipulate app lets you explore this.
+```{r eval=FALSE}
+Variability()
+```
+
+
+
+##### **Favorite numerical measures:  favstats**
+
+The function **favstats** gives you all of your favorite measures of center and spread:
+
+```{r}
+favstats(~fastest,data=m111survey)
+```
+
+Well, you aren't actually given the IQR.  To get it, you will have to subtract Q1 from Q3:
+
+```{r}
+results <- favstats(~fastest,data=m111survey)
+IQR <- results$Q3-results$Q1  #favstats returns a data frame
+IQR
+```
+#### The Empirical Rule
+
+People like to use the mean as a measure of center and the SD as a measure of spread, because of the following rule of thumb:
+
+**The Empirical Rule** (also known as the *68-95-99.7 Rule*):  If the distribution of sample data or of a population resembles a symmetric, bell-shaped curve, then
+
+* About 68% of the values lie within one SD of the mean.
+* About 95% of the values lies within two SDs of the mean.
+* About 99.7% of the values lie within three SDs of the mean.
+
+The rule works surprisingly well even when the data are somewhat skewed.  The following manipulate app illustrates something of the scope and the limitations of the Empirical Rule:
+
+```{r eval=FALSE}
+require(manipulate)
+EmpRule()
+```
+
+
+Because of the Empirical rule, we often measure how "unusual"  a data value is by figuring out how many SDs it is above or below the mean of all of the data.  That is,
+
+$$z = \frac{x-\bar{x}}{s},$$
+
+where $x$ is the actual value.  $z$ is called the *z-score* for $x$.
+
+For example, suppose that Linda is 72 inches tall.  How does she compare with the other GC students in the **m111survey** data?
+
+```{r}
+mean.data <- mean(m111survey$height,na.rm=TRUE)
+sd.data <- sd(m111survey$height)
+actual.x <- 73
+z.score <- (actual.x-mean.data)/sd.data
+z.score
+```
+So, 73 inches is only about `r round(z.score,2)` SDs above the mean for the group.  Linda is taller than average, but since about 68% of the students are within 1 SD of the mean, there is nothing terribly surprising about her height.
+
+Of course, you might wonder whether Linda is unusually tall, *for a female.*  Let's see:
+```{r}
+GC.gals <- subset(m111survey,sex=="female")
+head(GC.gals)  #check to see that we've got just the females
+mean.data <- mean(GC.gals$height,na.rm=TRUE)
+sd.data <- sd(GC.gals$height)
+z.score <- (actual.x-mean.data)/sd.data
+z.score
+```
+So Linda is about `r round(z.score,2)` SDs above the mean for the females.  That's more impressive.
+
+>**Practice**.  George comes from School where the mean GPA is 3.4, with a SD of 0.3.  Linda comes from a school where the mean GPA is 2.8, with a SD of 0.4.  George's GPA is 3.6, and Linda's GPA is 3.3.  Although the schools have different grading patterns, the students at both schools are believed to be equally strong, on the whole.
+
+>1. Compute George's z-score.
+>2. Compute Linda's z-score.
+>3. Based on the z-scores, who do you think is the stronger student?
+>4. Harold is from the same school as George.  His z-score is -0.5.
+>  * Is Harold above or below average?
+ > * What is Harold's actual score?
+
+
+
+Let's adopt the following convention:  *a value shall be considered **unusual** if its z-score is less than -2 or more than 2.*
+
+>**Practice** If the distribution of a set of data values is roughly bell-shaped, about what percentage of the data values would be considered unusual?
+
+####  Mean, Median and Skewness
+
+If you are looking at a histogram of data, about half of the area of the rectangles will lie below the median.  On the other hand, the mean of the data will be about the place where you would put your finger, if you wanted the histogram to balance on your finger.  Therefore, when the distribution is symmetric, the mean and the median will be about the same.  But what happens if the distribution is skewed?  The following app helps you to find out:
+
+```{r eval=FALSE}
+require(manipulate)
+Skewer()
+```
+
+The mean tends to be "dragged" in the direction of a tail and dragged in the direction of outliers.  Therefore:
+
+* when a distribution is STRONGLY skewed, or
+* when it has SEVERE outliers in one direction but not the other,
+
+the preferred measures of center and spread are the median and the IQR, rather than the mean and the SD.
+
+### Research Question:  Who Tends to drive Faster:  GC Guys or GC Gals?
+
+This research question concerns the relationship between two variables in the **m111survey** data:  **fastest** and **sex**.  **fastest is numerical, and **sex** is a factor.  Since we are inclined to think that one's sex might, through cultural conditioning, have some effect on how fast one likes to drive, we shall consider **sex** to be the explanatory variable and **fastest** to be the response variable.
+
+Let's investigate this question both numerically and graphically.
+
+#### Graphical Approaches
+
+
+##### **Parallel Boxplots**
+
+```{r fig.width=4, fig.height=4}
+bwplot(fastest~sex,data=m111survey,
+       main="Fastest Speed Driven, by Sex",
+       xlab="Sex",
+       ylab="Fastest Speed, in mph")
+```
+The question was about who *tends* to drive faster, so it makes sense to compare measures of center.  The median for the guys is clearly higher than the median for the gals, so on that basis it makes sense that guys drive faster, on average.  We might also point out that "box" for the guys, which represents the middle 50% of the guys' speeds, is higher than the middle 50% of the gals' speeds.
+
+>**Practice**:  Research Question:  Who tends to have higher GPAs?  People who prefer the front, the middle or the back?  Investigate this question using parallel boxplots.
+
+Violins plots are the coolest!
+
+```{r}
+bwplot(fastest~sex,data=m111survey,
+       main="Fastest Speed Driven, by Sex",
+       xlab="Sex",
+       ylab="Fastest Speed, in mph",
+       panel = function(box.ratio,...) {
+                  panel.violin(..., col = "bisque", box.ratio = box.ratio)
+                  panel.bwplot(..., box.ratio = 0.1)
+                })
+```
+
+
+##### **Histograms, Dotplots and Density Plots**
+
+When you make a histogram of **fastest**, the male speeds and the females speeds are lumped together.  However, a computer can be programmed to show you histograms for each group.  For example, try this app:
+
+```{r, eval=FALSE}
+require(manipulate)
+DtrellHist(~fastest|sex,data=m111survey)
+```
+
+The histogram for the guys seems a bit shifted to the right, in comparison to the gals, so the guys appear to drive faster, on the whole.
+
+You can also look at histograms in separate panels by "conditioning" on **sex**:
+```{r fig.width=4, fig.height=4}
+histogram(~fastest|sex,data=m111survey,  #the | makes separate panels
+       type="density",
+       main="Fastest Speed Driven, by Sex",
+       xlab="Fastest Speed, in mph")
+```
+This gives us both histrograms at once!  Again, we see that the guys are shifted somewhat to the right.
+
+We can try dotplots, too:
+```{r fig.width=4, fig.height=4}
+dotPlot(~fastest|sex,data=m111survey,  #the | makes separate panels
+       main="Fastest Speed Driven, by Sex",
+       xlab="Fastest Speed, in mph")
+```
+
+But it's not always easy to compare histograms or dotplots side-by-side.  We might consider overlaying two density plots, one for the guys and one for the gals.  Overlaying can be accomplished using the *groups* argument:
+
+```{r fig.width=4, fig.height=4}
+densityplot(~fastest,data=m111survey,
+       groups=sex,
+       main="Fastest Speed Driven, by Sex",
+       xlab="Fastest Speed, in mph",
+       auto.key=TRUE)
+```
+
+Yep, the guys drive faster:  their density plot is shifted a bit to the right, in comparison to that of the gals.
+
+#### Numerical Approaches
+
+Say that we want to know whether there is a relationship between the numerical variable **GPA** and the categorical variable **seat**.  To investigate the question numerically, we can use **favstats**:
+
+```{r}
+favstats(GPA~seat,data=m111survey)
+```
+Whether you focus on means or on medians, the result is the same:  in this sample, front-sitters have the highest GPAs, on average, and back-sitters have the lowest.
+
+The ~ symbol can be used to break down a numerical variable by a factor in many functions:
+```{r}
+mean(fastest~sex,data=m111survey,na.rm=TRUE)
+median(fastest~sex,data=m111survey)
+sd(fastest~sex,data=m111survey,na.rm=TRUE)
+```
+
+Reading
+------------
+
+Reading is a primary skill that is develop during your first year at Georgetown College (think about your FDN 111 class).  In this course, we not only read the course text, we also read data and we read tables and graphs:
+
+* We read data for **structure**:  we note rows (individuals) and columns (variables).  We look at the structure of the data, because the type of a variables determines how we explore and describe it.
+
+*  We read data to interpret it.  Once we know the type of a variable, we know what descriptive techniques might help us to summarize and describe it.
+
+*  We read tables and graphs **for structure** and **to interpret** them.  Tables and graphs have their own structures.  Tables have rows, columns, cells, and sometimes marginal totals.  Graph have axes, scales on the axes, axis labels, titles, legends, etc.  The parts work together to guide us to a good summary of the data.
+
+*  We read in data **in context**.  For example, it is important to recal the Help file on **mat111**: the Help said that the survey was a survey of MAT 111 students at Georgetown College.
+
+*  We read in a spirit of **critical engagement.**  for example:
+
+  * When we learn that the students in the **m111survey** data are all from MAT 111, we might wonder whether this sample is very much like a random sample.  If not, it might be trustworthy as a guide to how the GC population looks.
+  *  Even when the sample is random, we always wonder:  "Are the patterns we see in the data also present in the population, or are they just due to chance?"  As we proceed in the course, we'll learn how to answer this sort of question.
+
+
+## Thoughts on R
+
+
+### Some important R functions from this Chapter:
+
+* **xtabs**
+* **perctab**
+* **rowPerc**, **colPerc**
+* **barchart**
+* **histogram**, **densityplot**, **dotPlot**, **bwplot**
+* **mean**, **median**, **sd**, **quantile**
+* **favstats**
+
+
+### Those Pesky Formulas!
+
+The formula-data input format can be confusing at first.  However, there are some patterns that will make life easier for you:
+
+When you deal with just one variable $x$, the format is usually:
+
+    **goal(~x,data = MyData)**
+
+When you deal with the relationship between a numerical value $y$ and a factor variable $x$, the format is usually:
+
+    **goal(y~x,data = MyData)**
+
+In the formula above $y$ is usually the response variable and $x$ is the explanatory, but R doesn't know anything about that.  R just puts the values of the first variable along the y axis, and the values of the second variable along the x-axis.
+
+When you deal with the relationship between two factor variables, the format is usually:
+
+    **goal(~x+y, data = MyData)**.
+
+If there is an explanatory variable, we will try to remember to put it first, and the response variable second.  (But R neither knows nor cares about explanatory vs. response.)
+
+
+## GeekNotes
+
+
+
+### More Thoughts About Reading for Structure
+
+Everything in R is an object.  Every object has a structure.  In FDN 111 , we learn that the structure of an object consists of its parts and the way that the parts relate together.  R can show us the structure of an object using the **str** function.  We have already seen this for data frames:
+
+```{r}
+str(m111survey)
+```
+
+The parts of a data frame are the variables.   The way they relate together to make an actual data frame is that all have the same length (71 in this case).  This allows R to combine the variable in columns, and to interpret the rows as individuals.
+
+You can think of a data frame as being like a book.  The "chapters" of the book are the variables.
+
+If a data frame is like a book, then a package, such as tigerstats, is a like collection of books.  The authors of R must take this analogy pretty seriously, because one way to load is package is as follows:
+
+```{r}
+library(tigerstats)
+```
+
+The **library** functions takes all of the books in *tigerstats* out of storage and puts them on the shelves of R's library.
+
+Just like you, R is a reader, so R reads for structure, too.  Look at the following code:
+
+```{r}
+histogram(~fastest, data=m111survey)
+```
+
+You can think of it as saying to R:  "Put on your *histogram* glasses.  Then take up the book named **m111survey**, turn to chapter **fastest**, and read that chapter with your **histogram** glasses."
+
+When R gets interprets that code, it "reads" *fastest* with histogram glasses.  It can do so because of the structure of fastest:
+
+```{r}
+str(m111survey$fastest)
+```
+
+R sees that is **fastest** is a numerical vector.  It can use histogram glasses to read that vector and produce the histogram you see on the screen.
+
+Suppose you were to ask R to make a histogram of **sex**
+
+```{r  fig.width=3,fig.height=3}
+histogram(~sex,data=m111survey)
+```
+
+You don't get a histogram; you get a barchart instead.  R was programmed to look at the structure of the input variable.  If it's a factor rather than a numerical vector, then R looks around for a pair of glasses that might be useful for reading factors.  It decides on **barchart**.  This is very kind of R, is it not?
+
+We said that everything in R is an object, and every object has a structure.  Therefore, even graphs have a structure.  Try this:
+
+```{r}
+FastHist <- histogram(~fastest,data=m111survey,
+                      main="Fastest Speed Ever Driven",
+                      xlab="speed in mph",
+                      type="density")
+```
+
+Where's the graph?  Well, we didn't ask for it to go the screen; instead we asked for it to be stored as an object named **FastHist**.  Let's look at the structure of the object:
+
+```{r eval=FALSE}
+str(FastHist)
+```
+
+Run the chunk above.  It's an enormous list (of 45 items).  When you look through it, you see that it appears to contains the information need to build a histogram.
+
+The "building" occurs when we **print** the object:
+
+```{r}
+print(FastHist)
+```
+
+The **print** functions uses the information in **FastHist** to produce the histogram you see on the screen.  (When you ask for a histogram directly, you are actually asking R to print the histogram object created by the **histogram** function.)
+
+Of course when we read a histogram, we usually read the one we see on the screen, so we think of its structure differently than R does.  In general, we think of the structure of a graph as:
+
+* the axes
+* the panel (the part that is enclosed by the axes)
+* the annotations (title, axis labels, legend, etc.)
+
+
+### A Barchart of Percents from a Twoway Table.
+
+Say you want a barchart that shows percents, rather than counts.  When you feed a table of row percents into **barchart**:
+
+```{r fig.width=3,fig.height=3}
+barchart(sexseatrp,stack=FALSE,horizontal=FALSE,
+         main="Seat vs. Sex",
+         auto.key=TRUE,ylab="Percent")  
+```
+you get the Totals column, too, which is not useful.  To get rid of it, try:
+```{r fig.width=3,fig.height=3}
+smaller <- sexseatrp[,-4]
+```
+
+This keeps all rows, but leaves out the 4th column!
+
+```{r}
+barchart(smaller,stack=FALSE,horizontal=FALSE,
+         main="Seat vs. Sex",
+         auto.key=TRUE,ylab="Percent")  
+```
+
+Ah, much better!
+
+An alternative approach is to use the function **prop.table** to compute row proportions from the original twoway table of counts:
+
+```{r}
+sexseat <- xtabs(~sex+seat,data=m111survey)
+sexseatrp <- 100*prop.table(sexseat)  #multiplying by 100 tunrs row proportions into row percents
+barchart(sexseatrp,stack=FALSE,horizontal=FALSE,
+         main="Seat vs. Sex",
+         auto.key=TRUE,ylab="Percent")  
+```
+The **prop.table** function does not add an extraneuos column of total proportions, so there is no need to cut it down prior to feedng it to **barchart**.
+
+If you need column proportions, just set the *margin* argument to 2:
+```{r}
+prop.table(sexseat,margin=2)
+```
+
+
+### Density Histograms With varying Rectangle-Widths.
+
+In a density histogram, it can make a lot of sense to let the rectangles have different widths.  For example, look at the tornado damage amounts in **tornado**:
+
+```{r fig.width=5,fig.height=5}
+data(tornado)
+histogram(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+            type="density")
+```
+
+The distribution is very right-skewed, but most of the states suffered very little damage.  Let's get a finer-grained picture of these states by picking our own breaks:
+```{r fig.width=5,fig.height=5}
+data(tornado)
+histogram(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+            type="density",
+            breaks=c(0,2,4,6,10,15,20,25,30,40,50,60,70,80,90,100))
+```
+
+You should play around with the sequence of breaks, to find one that "tells the story" of the data well.
+
+### Adding a rug to a histogram, density plot or boxplot.
+
+Adding the argument *panel.rug* to the panel function gives a "rug" of individual data values along the x-axis.
+
+```{r fig.width=4,fig.height=4}
+histogram(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+           type="density",
+           breaks=c(0,2,4,6,10,15,20,25,30,40,50,60,70,80,90,100),
+           panel=function(x,...) {
+             panel.histogram(x,...)
+             panel.rug(x,col="red",...)
+            }
+          )
+```
+
+```{r fig.width=4,fig.height=4}
+bwplot(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+           panel=function(x,...) {
+             panel.violin(x,col="bisque",...)
+             panel.bwplot(x,...)
+             panel.rug(x,col="red",...)
+            }
+          )
+```
+
+
+### Fine-tuning Density Plots
+
+Adding a list of *density arguments* fine tunes features of the density plot.  For example, *bw* specifies how "wiggly" the plot will be;  *from* and *to* tell R where to begin and end estimation of the density curve.
+
+Here is an example of what can be done:
+
+```{r fig.width=4,fig.height=4}
+histogram(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+           type="density",
+           breaks=c(0,2,4,6,10,15,20,25,30,40,50,60,70,80,90,100),
+           panel=function(x,...) {
+             panel.histogram(x,...)
+             panel.rug(x,col="red",...)
+             panel.densityplot(x,col="blue",
+                        darg=list(bw=3,from=0,to=100),...)
+            }
+          )
+```
+
+R constructs a density plot by combining lots of little bell-shaped curves (called *kernals*), one centered at each point in the data.  The bandwidth *bw* tells R how spread out these kernals should be:  the bigger the bandwidth, the shorter and wider the kernal, and the stiffer the density curve will be.  With a small bandwidth, the kernals are skinny and tall, giving the density plot a wiggly appearance, especially near isolated data points.
+
+How do you know what the bandwidth should be?  For now, you just have to try various values.  The following **manipulate** app helps you experiment with different values of the bandwidth.
+
+```{r eval=FALSE}
+require(manipulate)
+manipulate(
+  bandwidth=slider(0.5,20,init=5,label="Bandwidth (1 = wiggly, 20 = stiff)"),
+  histogram(~damage,data=tornado,
+           main="Average Annual Tornado Damage, by State",
+           xlab="Damage in Millions of Dollars",
+           type="density",
+           breaks=c(0,2,4,6,10,15,20,25,30,40,50,60,70,80,90,100),
+           panel=function(x,...) {
+             panel.histogram(x,...)
+             panel.rug(x,col="red",...)
+             panel.densityplot(x,col="blue",
+                        darg=list(bw=bandwidth,from=0,to=100),...)
+            }
+          )
+)
+```
+
+When the bandwidth is set too low, the wiggles in the density plot are too sensitive to chance clusters of data points -- clusters that probably would not appear in the same place in a repeated study.  When the bandwidth is set too high, the density plot is not able to capture the overall shape of the distribution.
+
+### Why We Divide by $n-1$ when we compute the sample SD
+
+Recall that when we compute the sample standard deviation, we don't quite average the squared deviations.  Instead, we divide by one less than the number of data values:
+
+$$s = \sqrt{(\sum{(x_i - \bar{x})^2})/(n-1)}.$$
+
+What if we have the entire population?  Then the SD is called $\sigma$, and it is computed like this:
+
+$$\sigma = \sqrt{(\sum{(x_i - \mu)^2})/N},$$
+
+where $\mu$ is the mean of the population and $N$ is the number of individuals in the population.  So you might well ask:  "Why do we divide by one less than the number of items when we have a sample, but not when we have the entire population?"
+
+To answer this, we first have to back up to the idea of variance. The sample variance is:
+
+$$s^2 = \frac{\sum{(x_i - \bar{x})^2}} {n-1},$$
+
+and the population variance is
+
+$$\sigma^2 = \frac{\sum{(x_i - \mu)^2}} {N}.$$
+
+The formula for the population variance makes perfect sense.  Although the $n-1$ in the formula for sample variance does not appear to make good sense, it has been cleverly designed so that the sample variance will be a good estimate of the population variance.
+
+What do we mean by "good estimate"?  Let's suppose that a statistician wants to estimate the variance of the heights of **imagpop**, but she only has time to take a sample of size, say, $n=4$.  Unknown to her the population variance is:
+```{r}
+sigmasq <- var(imagpop$height)*(9999/10000)  #to get pop variance  rather than sample variance
+sigmasq
+```
+
+
+Her sample might, on the other hand, might look like this:
+
+```{r}
+HerSamp <- popsamp(n=4,pop=imagpop)
+HerSamp
+```
+Then her estimate of the variance would be
+```{r}
+var(HerSamp$height)
+```
+
+Her estimate might be high or low:  it depends on the luck of the draw.  But suppose that many, many statisticians -- 10,000 of them, let's say, were to each take a random sample of size 4 and compute the sample variance. Then the results would be like this:
+
+```{r}
+SimVars=numeric()
+#SimVars <- do(1000)*var(popsamp(n=4,pop=imagpop)$height)  #Be patient:  this takes a little while
+for (i in 1:10000){
+  SimVars[i]=var(popsamp(n=4,pop=imagpop)$height)
+}
+```
+
+Individually, their estimates would be all over the place:
+
+But on average, they would get:
+```{r}
+mean(SimVars)
+```
+
+Notice that this about the same as the population variance $\sigma^2 = `r sigmasq`$.
+
+On average, over many, many samples, the sample variance equals the population variance.  We say that the sample variance is an *unbiased* estimator of the population variance. On the other hand, if the statisticians were to compute the sample variance by dividing by $n=4$ instead of dividing by $n-1=3$, then they would get results that are, on average, *too small*:
+
+```{r}
+BadVars <- SimVars*3/4  #so that there is now a 4 on the bottom
+mean(BadVars)
+```
+
+Sure enough, the results, on average are only about 3/4th the size of the true $\sigma^2$.  Dividing by $n$ in the sample variance would give you a biased estimator of population variance!
+
+
