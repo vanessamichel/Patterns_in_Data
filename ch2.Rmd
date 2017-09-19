@@ -279,8 +279,13 @@ histogram(~fastest,data=m111survey,
 >**Practice:**  Look at the last histogram to answer these questions:
 >
 >1. About what percentage of students in the sample drove between 90 and 100 mph (include 90)?
+20%  
+
 >2. About what percentage drove between 100 and 110 mph?
+20%  
+
 >3. About what percentage drove between 100 and 120 mph?
+5%  
 
 So far, the vertical axis in histograms gives percentages.  If we want frequencies, we say:
 ```{r fig.width=3,fig.height=3}
