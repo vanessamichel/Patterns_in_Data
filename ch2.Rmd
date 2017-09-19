@@ -148,16 +148,18 @@ We see that 47.5% of the women prefer the front, whereas only 25.81% of the men 
 #### Graphical Exploration:  Barcharts Again
 
 ```{r fig.width=3,fig.height=3}
-barchart(tabsexseat,stack=FALSE,horizontal=FALSE,
-         main="Seat vs. Sex",
-         auto.key=TRUE)  #auto.key=TRUE gives you the legend
+barchart
 ```
 
 
 
 
 >**Practice:**  Research Question:  "Who is more likely to believe in love at first sight:  a guy or a gal?"  Explore this question both graphically and numerically.
-
+```{r}
+bwplot(GPA ~ sex | love_first,
+	data = m111survey,
+	layout = c(1,2))
+```
 
 
 ### Research Question:  How fast do GC students drive, when they drive their fastest?
